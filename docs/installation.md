@@ -2,7 +2,22 @@
 
 ## 1. System Requirements
 
-This project was developed and tested with the following environment:
+| Component | Tested Version |
+|---|---|
+| Operating System | Ubuntu 22.04 LTS |
+| ROS 2 | Humble Hawksbill |
+| Gazebo Fortress | 6.18.0 |
+| `ros-humble-gz-ros2-control` | 0.7.21 |
+| `ros-humble-ros-gz` | 0.244.26 |
+| `ros-humble-ros-gz-bridge` | 0.244.26 |
+| `ros-humble-ros-gz-sim` | 0.244.26 |
+| `ros-humble-ros-gz-interfaces` | 0.244.26 |
+| Clearpath Gazebo | 1.3.3 |
+| Franka FR3 | 7 DoF |
+| Kinova Gen3 Lite | 6 DoF |
+| Mobile Platform | Clearpath Jackal J100 |
+
+These versions were recorded from the working development environment on October 13, 2026. Matching the tested versions is recommended when reproducing the simulation. Exact Debian package revisions are available from the local package manager.This project was developed and tested with the following environment:
 
 | Component | Version |
 |---|---|
