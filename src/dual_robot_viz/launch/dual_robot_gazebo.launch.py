@@ -32,12 +32,15 @@ def generate_launch_description():
             )
         ),
         launch_arguments={
-            'world': os.path.expanduser(
-                '~/dual_robot_ws/worlds/empty'
-             )
+            'world': os.path.splitext(
+                 os.path.join(
+                     get_package_share_directory('dual_robot_viz'),
+                     'worlds',
+                     'empty.sdf'
+            )    
+          )[0]
         }.items()
     )
-
     # -----------------------------
     # Franka robot_description
     # -----------------------------
