@@ -1,0 +1,104 @@
+diff --git a/franka_fr3_moveit_config/config/fr3_ros_controllers.yaml b/franka_fr3_moveit_config/config/fr3_ros_controllers.yaml
+index d29314d..b729589 100644
+--- a/franka_fr3_moveit_config/config/fr3_ros_controllers.yaml
++++ b/franka_fr3_moveit_config/config/fr3_ros_controllers.yaml
+@@ -16,7 +16,7 @@
+   fr3_arm_controller:
+     ros__parameters:
+       command_interfaces:
+-        - effort
++        - position
+       state_interfaces:
+         - position
+         - velocity
+diff --git a/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml b/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml
+index 2046906..a05983c 100644
+--- a/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml
++++ b/franka_gazebo/franka_gazebo_bringup/config/franka_gazebo_controllers.yaml
+@@ -3,6 +3,9 @@
+     ros__parameters:
+       update_rate: 1000  # Hz
+ 
++      franka_position_controller:
++        type: position_controllers/JointGroupPositionController
++
+       joint_position_example_controller:
+         type: franka_example_controllers/JointPositionExampleController
+ 
+@@ -15,6 +18,9 @@
+       joint_state_broadcaster:
+         type: joint_state_broadcaster/JointStateBroadcaster
+ 
++      fr3_gripper_position_controller:
++        type: position_controllers/JointGroupPositionController
++
+       mobile_fr3_duo_joint_impedance_example_controller:
+         type: franka_example_controllers/MobileFr3DuoJointImpedanceExampleController
+       
+@@ -33,6 +39,27 @@
+       cartesian_impedance_example_controller:
+         type: franka_example_controllers/CartesianImpedanceExampleController
+ 
++  franka_position_controller:
++    ros__parameters:
++      joints:
++        - fr3_joint1
++        - fr3_joint2
++        - fr3_joint3
++        - fr3_joint4
++        - fr3_joint5
++        - fr3_joint6
++        - fr3_joint7
++
++  fr3_gripper_position_controller:
++    ros__parameters:
++      joints:
++        - fr3_finger_joint1
++
++  joint_position_example_controller:
++    ros__parameters:
++      robot_type: "fr3"
++      gazebo: true
++
+   joint_velocity_example_controller:
+     ros__parameters:
+       robot_type: "fr3"
+diff --git a/franka_gazebo/franka_gazebo_bringup/launch/gazebo_franka_arm_example_controller.launch.py b/franka_gazebo/franka_gazebo_bringup/launch/gazebo_franka_arm_example_controller.launch.py
+index 4a17182..ba76350 100644
+--- a/franka_gazebo/franka_gazebo_bringup/launch/gazebo_franka_arm_example_controller.launch.py
++++ b/franka_gazebo/franka_gazebo_bringup/launch/gazebo_franka_arm_example_controller.launch.py
+@@ -69,7 +69,7 @@ def get_robot_description(context: LaunchContext, robot_type, load_gripper, fran
+             'hand': load_gripper_str,
+             'gazebo': 'true',
+             'ee_id': franka_hand_str,
+-            'gazebo_effort': 'true',
++            'gazebo_effort': 'false',
+         }
+     )
+ 
+diff --git a/franka_gazebo/franka_gazebo_bringup/urdf/franka_arm.gazebo.xacro b/franka_gazebo/franka_gazebo_bringup/urdf/franka_arm.gazebo.xacro
+index b158999..f2619fb 100644
+--- a/franka_gazebo/franka_gazebo_bringup/urdf/franka_arm.gazebo.xacro
++++ b/franka_gazebo/franka_gazebo_bringup/urdf/franka_arm.gazebo.xacro
+@@ -26,6 +26,7 @@
+     <xacro:arg name="hand" default="true"/>
+     <xacro:arg name="ee_id" default="franka_hand"/>
+     <xacro:arg name="gazebo_effort" default="false"/>
++    <xacro:arg name="robot_namespace" default=""/>
+ 
+     <!-- Compute prefix (same logic as fr3.urdf.xacro) -->
+     <xacro:property name="prefix" value="$(arg arm_prefix)"/>
+@@ -57,6 +58,13 @@
+     <gazebo>
+       <plugin filename="gz_ros2_control-system" name="gz_ros2_control::GazeboSimROS2ControlPlugin">
+         <parameters>$(find franka_gazebo_bringup)/config/franka_gazebo_controllers.yaml</parameters>
++        
++        <xacro:if value="${'$(arg robot_namespace)' != ''}">
++         <ros>
++            <namespace>/$(arg robot_namespace)</namespace>
++         </ros>
++        </xacro:if> 
++
+       </plugin>
+     </gazebo>
+ 
