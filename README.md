@@ -1,94 +1,229 @@
-# Dual Robot Gazebo Simulation
+# Bilateral Teleoperation Simulation
 
-ROS 2 Humble simulation containing the Franka FR3 and Kinova Gen3 Lite in a shared Gazebo environment.
+ROS 2 Humble simulation integrating the **Franka Research 3 (FR3)** and the **Clearpath Jackal J100 equipped with a Kinova Gen3 Lite** in a shared Gazebo Fortress environment.
+
+The repository provides the ROS 2 package required to launch both robotic systems in the same simulation world.
 
 ## 1. Project Overview
 
-This project combines:
+The simulation includes:
 
-- Franka FR3 simulation using `franka_ros2`.
-- Clearpath Jackal J100 with Kinova Gen3 Lite.
-- A shared Gazebo Fortress world.
-- ROS 2 controllers for robot motion.
-- RViz visualization.
+- Franka Research 3 (FR3), a 7-DoF robotic manipulator.
+- Clearpath Jackal J100 with Kinova Gen3 Lite, a 6-DoF manipulator.
+- A shared lightweight Gazebo Fortress world.
+- ROS 2 controllers for both robotic systems.
+- RViz2 visualization.
 
-The long-term goal is to develop a bilateral teleoperation system with Cartesian pose mapping and force feedback.
+The simulation provides the foundation for research in bilateral teleoperation, Cartesian pose mapping, and force feedback.
 
-## 2. Architecture
+This repository focuses on the shared simulation environment rather than the complete bilateral teleoperation control implementation.
 
-The Clearpath simulation starts Gazebo and spawns the Jackal/Kinova system.
+## 2. System Requirements
 
-A custom launch file processes the Franka Xacro, publishes its robot description, and spawns the Franka FR3 in the same Gazebo world.
+The project was developed and tested using:
 
-The Franka uses `gz_ros2_control/GazeboSimSystem` in the currently tested configuration (`gazebo_effort=false`).
-
-## 3. Requirements
-
-- Ubuntu and ROS 2 Humble
+- Ubuntu 22.04 LTS
+- ROS 2 Humble
 - Gazebo Fortress
-- `ros_gz` / `ros2_control`
+- `ros_gz` and `ros2_control`
 - Franka ROS 2 packages
-- Clearpath Gazebo simulation packages
-- Jackal J100 and Kinova Gen3 Lite configuration
+- Clearpath ROS 2 packages
+- Clearpath Jackal J100 and Kinova Gen3 Lite configuration
 
-**Installation details and exact dependency versions:** To be documented from the working machine.
+**Important:** ROS 2 Humble and the Franka and Clearpath dependencies must be installed before building this repository.
 
-## 4. Workspace Setup
+The Franka and Clearpath packages are external dependencies and are not included in this repository.
 
-After installing and building the dependency workspaces, build the dual robot workspace:
+Additional installation information is available in `docs/installation.md`.
 
-```bash
-cd ~/dual_robot_ws
-colcon build --symlink-install
+## 3. Repository Structure
+
+```text
+Bilateral_Teleoperation_Simulation/
+├── README.md
+├── .gitignore
+├── config/
+│   └── robot.simulation.example.yaml
+├── docs/
+│   └── installation.md
+├── patches/
+│   └── franka/
+│       └── franka_all_changes.patch
+├── src/
+│   └── dual_robot_viz/
+│       ├── dual_robot_viz/
+│       │   └── __init__.py
+│       ├── launch/
+│       │   ├── dual_robot_gazebo.launch.py
+│       │   └── dual_robot_viz.launch.py
+│       ├── worlds/
+│       │   └── empty.sdf
+│       ├── resource/
+│       ├── package.xml
+│       ├── setup.py
+│       └── setup.cfg
+└── worlds/
+    └── empty.sdf
 ```
 
-## 5. Launch the Simulation
+## 4. Downloading the Repository
 
-In a new terminal:
+Open a terminal and source ROS 2 Humble:
+
+```bash
+source /opt/ros/humble/setup.bash
+```
+
+Navigate to the home directory:
+
+```bash
+cd ~
+```
+
+Clone this repository into the dual-robot workspace:
+
+```bash
+git clone https://github.com/ChristinaMichailidou/Bilateral_Teleoperation_Simulation.git dual_robot_ws
+```
+
+The repository already contains the `src` directory and the ROS 2 package `dual_robot_viz`.
+
+## 5. Building the Workspace
+
+After installing the required Franka and Clearpath packages, execute:
 
 ```bash
 source /opt/ros/humble/setup.bash
 source ~/franka_ros2_ws/install/setup.bash
-source ~/dual_robot_ws/install/setup.bash
 
+cd ~/dual_robot_ws
+colcon build --symlink-install
+```
+
+After successful compilation, source the workspace:
+
+```bash
+source ~/dual_robot_ws/install/setup.bash
+```
+
+The package can be checked using:
+
+```bash
+ros2 pkg prefix dual_robot_viz
+```
+
+## 6. Launching the Dual-Robot Simulation
+
+Open a new terminal.
+
+Source the required environments:
+
+```bash
+source /opt/ros/humble/setup.bash
+source ~/clearpath/setup.bash
+source ~/franka_ros2_ws/install/setup.bash
+source ~/dual_robot_ws/install/setup.bash
+```
+
+For VMware environments, software rendering may be enabled using:
+
+```bash
+export LIBGL_ALWAYS_SOFTWARE=1
+```
+
+Launch the simulation:
+
+```bash
 ros2 launch dual_robot_viz dual_robot_gazebo.launch.py
 ```
 
-## 6. Test Franka Movement
+The launch file starts the Clearpath simulation and spawns the Franka FR3 in the same lightweight Gazebo world.
 
-List the controllers:
+The Franka is placed at approximately `(1.5, 0.0, 0.0)` metres relative to the Gazebo world origin.
+
+The Franka spawn is delayed to allow the Gazebo simulation to initialize.
+
+## 7. Simulation Architecture
+
+The custom launch file performs the following operations:
+
+1. Starts the Clearpath Gazebo simulation containing the Jackal J100 and Kinova Gen3 Lite.
+2. Loads the shared lightweight `empty.sdf` world.
+3. Generates the Franka FR3 robot description from its Gazebo Xacro file.
+4. Starts the Franka robot state publisher under the `/franka` namespace.
+5. Spawns the Franka in the same Gazebo environment.
+6. Loads the Franka controllers through its own controller manager.
+
+Both robotic systems share the same simulated world while maintaining independent ROS 2 controller managers.
+
+## 8. Inspecting the Controllers
+
+### Franka FR3
 
 ```bash
-ros2 control list_controllers -c /franka/controller_manager
-```
-
-Activate the example position controller:
-
-```bash
-ros2 run controller_manager spawner \
-  joint_position_example_controller \
+ros2 control list_controllers \
   -c /franka/controller_manager
 ```
 
-Verify its status:
+The Franka configuration includes the joint state broadcaster, gravity compensation example controller, and position controller.
+
+The position controller is initially loaded as inactive in the tested launch configuration.
+
+### Jackal J100 and Kinova Gen3 Lite
 
 ```bash
-ros2 control list_controllers -c /franka/controller_manager
+ros2 control list_controllers \
+  -c /j100_0000/controller_manager
 ```
 
-This controller is used for simulation testing, not the final teleoperation controller.
+The Kinova system includes a joint trajectory controller, gripper controller, and joint state broadcaster. The mobile platform may also expose its own velocity controller.
 
-## 7. Current Status
+Controller states and available interfaces can be inspected using the ROS 2 control command-line tools.
 
-- Both robot systems load into a shared Gazebo simulation.
-- A custom empty world replaces the warehouse environment.
-- Franka position and velocity command interfaces are available.
-- Franka joint position example controller has been activated successfully.
-- Cartesian mapping and bilateral force feedback are not yet implemented.
+## 9. Kinova Home Configuration
 
-## 8. Next Steps
+The Kinova Gen3 Lite can be moved to its SRDF-defined home/ready configuration:
 
-- Verify joint movement from ROS 2 state feedback.
-- Implement Cartesian 6D pose mapping.
-- Connect Franka EE motion to Kinova EE tracking.
-- Develop force estimation and bilateral feedback control.
+```text
+[0.0, 0.0, 1.5708, 1.5708, 1.5708, -1.5708]
+```
+
+The corresponding arm trajectory action is:
+
+```text
+/j100_0000/arm_0_joint_trajectory_controller/follow_joint_trajectory
+```
+
+The joint trajectory controller must be active before sending motion goals.
+
+## 10. Simulation Notes
+
+- The Franka uses the `/franka` namespace.
+- The Clearpath robot uses the `/j100_0000` namespace.
+- The Franka simulation configuration uses `gazebo_effort=true`.
+- The Franka gripper is disabled in the shared Gazebo launch configuration.
+- The simulation uses a lightweight Gazebo world to reduce computational requirements.
+- Robot controllers may require different command interfaces; inspect their states before sending commands.
+- Gazebo and RViz serve different purposes: Gazebo simulates the physical environment, while RViz visualizes robot states and ROS 2 data.
+
+## 11. Stopping the Simulation
+
+Return to the terminal in which the simulation was launched and press:
+
+```text
+Ctrl+C
+```
+
+Stop the existing simulation before launching another Gazebo environment.
+
+## 12. Documentation and Reproducibility
+
+Additional setup materials are provided in:
+
+- `docs/installation.md`
+- `config/robot.simulation.example.yaml`
+- `patches/franka/franka_all_changes.patch`
+
+The dual-robot simulation has been tested on the development system. A complete clean-machine installation and reproducibility check is planned.
+
+This repository does not include the complete Franka and Clearpath source distributions or the full bilateral teleoperation implementation.
